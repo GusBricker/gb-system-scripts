@@ -1,0 +1,39 @@
+" Line numbers
+set number
+
+" Syntax highlight
+syntax on
+colorscheme desert
+set background=dark
+
+" Search
+set hlsearch
+
+" Regular expressions
+set magic
+
+" Editing
+set smarttab
+set shiftwidth=4
+set tabstop=4
+set softtabstop=4
+set lbr
+set tw=150
+set history=700
+set showmatch
+set ignorecase
+set showcmd
+set autoindent
+
+" Backspace
+set backspace=eol,start,indent
+set whichwrap+=<,>,h,l
+
+" Auto update file when changed externally
+set autoread
+
+" Moving
+" Cursor will move 7 lines when using j/k
+set so=7
+set ruler
+set expandtab
