@@ -53,3 +53,21 @@ function up()
         cd ..
     done
 }
+
+function redit()
+{
+    local filter=$1
+    local directory=$2
+    local files
+    local file
+
+    if [[ "x${directory}" == "x" ]]
+    then
+        directory="$(pwd)"
+    fi
+    files=`ls -1 "${directory}"/${filter}`
+    for file in $files
+    do
+        vim ${file}
+    done
+}
