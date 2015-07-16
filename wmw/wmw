@@ -4,6 +4,7 @@ ARG_OPERATION=""
 ARG_PATH=""
 ARG_FREQUENCY="600"
 ARG_EXCLUDE=""
+ARG_NUM_VERSIONS=20
 ARG_DESTINATION="${HOME}/.wmw"
 CFG_TAR_ARCHIVE_TYPE="z"
 CFG_TAR_FILE_EXTENSION="tar.gz"
@@ -38,6 +39,8 @@ Options:
                             For OSX, can only use seconds!
                             Defaults to 10 minutes interval.
     -d,--destination        Place to backup files to!
+    -n,--num_versions       Number of versions of keep of backup. Will delete oldest backups first.
+                            Defaults to 20.
     -h,--help               Print this awesome info!
 
 Note: All arguments that take parameters are equals seperated.
@@ -113,13 +116,24 @@ function take_snapshot()
             exit 1
         fi
 
-        local gen_backup_folder="${ARG_DESTINATION}/backups/${GBL_WORKING_DIRECTORY}/${GBL_BACKUP_DATE}"
+        local gen_backups_folder="${ARG_DESTINATION}/backups/${GBL_WORKING_DIRECTORY}"
+        local gen_this_backup_folder="${gen_backups_folder}/${GBL_BACKUP_DATE}"
         local gen_backup_file="${GBL_NAME}.${CFG_TAR_FILE_EXTENSION}"
-        mkdir -p "${gen_backup_folder}"
+        mkdir -p "${gen_this_backup_folder}"
 
-        echo_or_log "Backing up ${GBL_NAME} to ${gen_backup_folder}"
+        # Cleanup older snapshots
+        pushd "${gen_backups_folder}" >/dev/null
+        local to_delete=$(ls -t | awk "NR>${ARG_NUM_VERSIONS}")
+        if [[ "x${to_delete}" != "x" ]]
+        then
+            echo_or_log "Deleting: ${to_delete}"
+            rm -r ${to_delete}
+        fi
+        popd >/dev/null
 
-        local tar_output=$( tar -c${CFG_TAR_ARCHIVE_TYPE}f "${gen_backup_folder}/${gen_backup_file}" --exclude="${ARG_EXCLUDE}" ${tar_backup_cmd} )
+        # Create new snapshot
+        echo_or_log "Backing up ${GBL_NAME} to ${gen_this_backup_folder}"
+        local tar_output=$( tar -c${CFG_TAR_ARCHIVE_TYPE}f "${gen_this_backup_folder}/${gen_backup_file}" --exclude="${ARG_EXCLUDE}" ${tar_backup_cmd} )
         echo_or_log "${tar_output}"
 
         if [[ "x${ARG_OPERATION}" == "xstart" ]]
@@ -173,6 +187,10 @@ do
             ;;
         -d=*|--destination=*)
             ARG_DESTINATION="${i#*=}"
+            shift
+            ;;
+        -n=*|--num_versions=*)
+            ARG_NUM_VERSIONS="${i#*=}"
             shift
             ;;
         *)
