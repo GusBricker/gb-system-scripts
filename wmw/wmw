@@ -79,7 +79,13 @@ function echo_or_log()
         local log_folder="${ARG_DESTINATION}/logs/${GBL_WORKING_DIRECTORY}"
 
         mkdir -p "${log_folder}"
-        echo "${now_fine}: ${@}" >> "${log_folder}/${GBL_NAME}_${GBL_BACKUP_DATE}.log"
+        echo "--${now_fine}--" >> "${log_folder}/${GBL_NAME}_${GBL_BACKUP_DATE}.log"
+        echo "${@}" >> "${log_folder}/${GBL_NAME}_${GBL_BACKUP_DATE}.log"
+
+        if [[ "x${DEBUG_WMW}" == "xyes" ]]
+        then
+            echo "${now_fine}: ${@}"
+        fi
     fi
 }
 
