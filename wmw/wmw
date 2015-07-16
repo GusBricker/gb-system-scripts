@@ -2,7 +2,7 @@
 
 ARG_OPERATION=""
 ARG_PATH=""
-ARG_FREQUENCY="60"
+ARG_FREQUENCY="600"
 ARG_EXCLUDE=""
 ARG_DESTINATION="${HOME}/.wmw"
 CFG_TAR_ARCHIVE_TYPE="z"
@@ -27,16 +27,18 @@ Watches you work, periodically backing up your work to either ${ARG_DESTINATION}
 to a directory you specify with the -d argument.
 
 Options:
-    -o,--operation			Valid values:
+    -o,--operation          Valid values:
                             start: Startings monitoring at specified interval
                             stop: Stops monitoring an instance specified by path
                             now: Does a single backup right now!
-    -p,--path
-                            Path to backup, can be either a file or folder.
-    -e,--exclude			Tar exclude filter to ignore certain files, defaults to no filter.
-    -f,--frequency			Frequency to backup the given path in minutes, defaults to 10 minutes.
-    -d,--destination		Place to backup files to!
-    -h,--help				Print this awesome info!
+    -p,--path               Path to backup, can be either a file or folder.
+    -e,--exclude            Tar exclude filter to ignore certain files, defaults to no filter.
+    -f,--frequency          Frequency to backup the given path. Given directly to sleep command.
+                            For Linux, can use postfixes, such as s,m,h respectively for seconds,minutes,hours.
+                            For OSX, can only use seconds!
+                            Defaults to 10 minutes interval.
+    -d,--destination        Place to backup files to!
+    -h,--help               Print this awesome info!
 
 Note: All arguments that take parameters are equals seperated.
 For example use -p like this: -p=~/my_stuff
