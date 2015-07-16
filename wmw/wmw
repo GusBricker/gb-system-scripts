@@ -1,0 +1,208 @@
+#!/bin/bash
+
+ARG_OPERATION=""
+ARG_PATH=""
+ARG_FREQUENCY="60"
+ARG_EXCLUDE=""
+ARG_DESTINATION="${HOME}/.wmw"
+CFG_TAR_ARCHIVE_TYPE="z"
+CFG_TAR_FILE_EXTENSION="tar.gz"
+THIS_SCRIPT=$(basename "${0}")
+GBL_WORKING_DIRECTORY=""
+GBL_NAME=""
+GBL_BACKUP_DATE=""
+
+
+platform="$(uname)"
+platform_is_osx="no"
+platform_is_linux="no"
+
+function usage()
+{
+	cat <<-__EOF__
+Usage: ${THIS_SCRIPT} [OPTIONS]...
+Watch me work!
+
+Watches you work, periodically backing up your work to either ${ARG_DESTINATION} or
+to a directory you specify with the -d argument.
+
+Options:
+    -o,--operation			Valid values:
+                            start: Startings monitoring at specified interval
+                            stop: Stops monitoring an instance specified by path
+                            now: Does a single backup right now!
+    -p,--path
+                            Path to backup, can be either a file or folder.
+    -e,--exclude			Tar exclude filter to ignore certain files, defaults to no filter.
+    -f,--frequency			Frequency to backup the given path in minutes, defaults to 10 minutes.
+    -d,--destination		Place to backup files to!
+    -h,--help				Print this awesome info!
+
+Note: All arguments that take parameters are equals seperated.
+For example use -p like this: -p=~/my_stuff
+
+Chris Lapa <chris@lapa.com.au>
+__EOF__
+}
+
+function abspath_purebash()
+{ 
+    # Taken from: http://superuser.com/a/218684
+    pushd . > /dev/null
+
+    if [ -d "$1" ]
+    then
+        cd "$1"
+        dirs -l +0
+    else
+        cd "$(dirname \"$1\")"
+        cur_dir=$(dirs -l +0)
+        if [[ "$cur_dir" == "/" ]]
+        then
+            echo "$cur_dir$(basename \"$1\")"
+        else
+            echo "$cur_dir/$(basename \"$1\")"
+        fi
+    fi
+    popd > /dev/null
+}
+
+function echo_or_log()
+{
+    if [[ "x${ARG_OPERATION}" != "xstart" ]]
+    then
+        echo "$@"
+    else
+        local now_fine="$(date +'%Y-%m-%d_%k-%M-%S')"
+        local log_folder="${ARG_DESTINATION}/logs/${GBL_WORKING_DIRECTORY}"
+
+        mkdir -p "${log_folder}"
+        echo "${now_fine}: ${@}" >> "${log_folder}/${GBL_NAME}_${GBL_BACKUP_DATE}.log"
+    fi
+}
+
+function take_snapshot()
+{
+    echo "Ok, going to work for you!"
+    while true
+    do
+        GBL_BACKUP_DATE="$(date +'%Y-%m-%d_%k-%M')"
+        GBL_WORKING_DIRECTORY=""
+        GBL_NAME=""
+        local tar_backup_cmd=""
+        if [[ -f "${ARG_PATH}" ]]
+        then
+            GBL_WORKING_DIRECTORY="$( cd $( dirname ${ARG_PATH} ) && pwd )"
+            GBL_NAME="$( basename ${ARG_PATH} )"
+            tar_backup_cmd="-C ${GBL_WORKING_DIRECTORY} ${GBL_NAME}"
+        elif [[ -d "${ARG_PATH}" ]]
+        then
+            GBL_WORKING_DIRECTORY="$( cd ${ARG_PATH} && pwd )"
+            GBL_NAME="$( basename ${GBL_WORKING_DIRECTORY} )"
+            tar_backup_cmd="-C ${GBL_WORKING_DIRECTORY} ."
+        else
+            echo "Path argument must be a directory or file"
+            exit 1
+        fi
+
+        local gen_backup_folder="${ARG_DESTINATION}/backups/${GBL_WORKING_DIRECTORY}/${GBL_BACKUP_DATE}"
+        local gen_backup_file="${GBL_NAME}.${CFG_TAR_FILE_EXTENSION}"
+        mkdir -p "${gen_backup_folder}"
+
+        echo_or_log "Backing up ${GBL_NAME} to ${gen_backup_folder}"
+
+        local tar_output=$( tar -c${CFG_TAR_ARCHIVE_TYPE}f "${gen_backup_folder}/${gen_backup_file}" --exclude="${ARG_EXCLUDE}" ${tar_backup_cmd} )
+        echo_or_log "${tar_output}"
+
+        if [[ "x${ARG_OPERATION}" == "xstart" ]]
+        then
+            echo_or_log "Done, sleeping for ${ARG_FREQUENCY}"
+            sleep "${ARG_FREQUENCY}"
+        elif [[ "x${ARG_OPERATION}" == "xnow" ]]
+        then
+            echo_or_log "Done"
+            return
+        fi
+    done
+}
+
+if [[ "x${platform}" == "xLinux" ]]
+then
+    platform_is_linux="yes"
+    abspath="readlink -f"
+elif [[ "x${platform}" == "xDarwin" ]]
+then
+    platform_is_osx="yes"
+    abspath="abspath_purebash"
+else
+    echo "Couldnt determine platform!"
+fi
+
+if [[ "x${@}" == "x" ]]
+then
+    usage
+    exit 0
+fi
+
+for i in "$@"
+do
+    case ${i} in
+        -o=*|--operation=*)
+            ARG_OPERATION="${i#*=}"
+            shift
+            ;;
+        -p=*|--path=*)
+            ARG_PATH="${i#*=}"
+            shift
+            ;;
+        -f=*|--frequency=*)
+            ARG_FREQUENCY="${i#*=}"
+            shift
+            ;;
+        -e=*|--exclude=*)
+            ARG_EXCLUDE="${i#*=}"
+            shift
+            ;;
+        -d=*|--destination=*)
+            ARG_DESTINATION="${i#*=}"
+            shift
+            ;;
+        *)
+            usage
+            exit 0
+            ;;
+        -h|--help)
+            usage
+            exit 0
+            ;;
+    esac
+done
+
+if [[ "x${ARG_PATH}" == "x" ]]
+then
+    echo "Path missing, can't backup nothing!"
+    exit 1
+fi
+
+mkdir -p ${ARG_DESTINATION}
+
+case "x${ARG_OPERATION}" in
+    "xstart"|"xnow")
+        take_snapshot &
+        ;;
+    "xstop")
+        pid_to_kill=$(pgrep -f "${THIS_SCRIPT} .*${ARG_PATH}.* ")
+        if [[ "x${pid_to_kill}" != "x" ]]
+        then
+            echo "Found ${THIS_SCRIPT} under PID: ${pid_to_kill}"
+            kill "${pid_to_kill}"
+        fi
+        ;;
+    "xnow")
+        ;;
+    *)
+        echo "Invalid operation, check usage with --help"
+        exit 1
+esac
+
+
