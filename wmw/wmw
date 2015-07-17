@@ -233,8 +233,6 @@ case "x${ARG_OPERATION}" in
             kill "${pid_to_kill}"
         fi
         ;;
-    "xnow")
-        ;;
     *)
         echo "Invalid operation, check usage with --help"
         exit 1
