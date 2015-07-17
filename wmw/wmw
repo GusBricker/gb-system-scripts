@@ -3,7 +3,7 @@
 ARG_OPERATION=""
 ARG_PATH=""
 ARG_FREQUENCY="600"
-ARG_EXCLUDE=""
+ARG_EXCLUDES=()
 ARG_NUM_VERSIONS=20
 ARG_DESTINATION="${HOME}/.wmw"
 CFG_TAR_ARCHIVE_TYPE="z"
@@ -34,6 +34,7 @@ Options:
                             now: Does a single backup right now!
     -p,--path               Path to backup, can be either a file or folder.
     -e,--exclude            Tar exclude filter to ignore certain files, defaults to no filter.
+                            Can be specified multiple times.
     -f,--frequency          Frequency to backup the given path. Given directly to sleep command.
                             For Linux, can use postfixes, such as s,m,h respectively for seconds,minutes,hours.
                             For OSX, can only use seconds!
@@ -131,9 +132,17 @@ function take_snapshot()
         fi
         popd >/dev/null
 
+        # Build up excludes
+        local built_up_excludes=""
+        for ((i = 0; i < ${#ARG_EXCLUDES[@]}; i++))
+        do
+            built_up_excludes="--exclude=${ARG_EXCLUDES[$i]} ${built_up_excludes}"
+        done
+
         # Create new snapshot
         echo_or_log "Backing up ${GBL_NAME} to ${gen_this_backup_folder}"
-        local tar_output=$( tar -c${CFG_TAR_ARCHIVE_TYPE}f "${gen_this_backup_folder}/${gen_backup_file}" --exclude="${ARG_EXCLUDE}" ${tar_backup_cmd} )
+
+        local tar_output=$( tar -c${CFG_TAR_ARCHIVE_TYPE}f "${gen_this_backup_folder}/${gen_backup_file}" ${built_up_excludes} ${tar_backup_cmd} )
         echo_or_log "${tar_output}"
 
         if [[ "x${ARG_OPERATION}" == "xstart" ]]
@@ -182,7 +191,7 @@ do
             shift
             ;;
         -e=*|--exclude=*)
-            ARG_EXCLUDE="${i#*=}"
+            ARG_EXCLUDES+=("${i#*=}")
             shift
             ;;
         -d=*|--destination=*)
