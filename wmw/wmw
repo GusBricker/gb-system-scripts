@@ -79,7 +79,7 @@ function echo_or_log()
     then
         echo "$@"
     else
-        local now_fine="$(date +'%Y-%m-%d_%k-%M-%S')"
+        local now_fine="$(date +'%Y-%m-%d_%H-%M-%S')"
         local log_folder="${ARG_DESTINATION}/logs/${GBL_WORKING_DIRECTORY}"
 
         mkdir -p "${log_folder}"
@@ -98,7 +98,7 @@ function take_snapshot()
     echo "Ok, going to work for you!"
     while true
     do
-        GBL_BACKUP_DATE="$(date +'%Y-%m-%d_%k-%M')"
+        GBL_BACKUP_DATE="$(date +'%Y-%m-%d_%H-%M')"
         GBL_WORKING_DIRECTORY=""
         GBL_NAME=""
         local tar_backup_cmd=""
