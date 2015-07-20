@@ -235,11 +235,17 @@ case "x${ARG_OPERATION}" in
         take_snapshot &
         ;;
     "xstop")
-        pid_to_kill=$(pgrep -f "${THIS_SCRIPT} .*${ARG_PATH}.* ")
-        if [[ "x${pid_to_kill}" != "x" ]]
+        pids_found=$(pgrep -f "${THIS_SCRIPT} .*${ARG_PATH}.* ")
+        pid_array=(${pids_found})
+
+        if [[ ${#pid_array[@]} -eq 1 ]]
         then
+            pid_to_kill="${pid_array[0]}"
             echo "Found ${THIS_SCRIPT} under PID: ${pid_to_kill}"
             kill "${pid_to_kill}"
+        else
+            echo "Multiple PID's found for ${THIS_SCRIPT}: ${pid_array[@]}"
+            echo "To protect your backups, I won't kill any of them!"
         fi
         ;;
     *)
