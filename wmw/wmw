@@ -12,6 +12,7 @@ THIS_SCRIPT=$(basename "${0}")
 GBL_WORKING_DIRECTORY=""
 GBL_NAME=""
 GBL_BACKUP_DATE=""
+GBL_THIS_BACKUP_FOLDER=""
 
 
 platform="$(uname)"
@@ -79,16 +80,24 @@ function echo_or_log()
     then
         echo "$@"
     else
-        local now_fine="$(date +'%Y-%m-%d_%H-%M-%S')"
-        local log_folder="${ARG_DESTINATION}/logs/${GBL_WORKING_DIRECTORY}"
+        if [[ "x${GBL_THIS_BACKUP_FOLDER}" != "x" ]]
+        then
+            local now_fine="$(date +'%Y-%m-%d_%H-%M-%S')"
+            local log_file="${GBL_THIS_BACKUP_FOLDER}/${GBL_NAME}.log"
 
-        mkdir -p "${log_folder}"
-        echo "--${now_fine}--" >> "${log_folder}/${GBL_NAME}_${GBL_BACKUP_DATE}.log"
-        echo "${@}" >> "${log_folder}/${GBL_NAME}_${GBL_BACKUP_DATE}.log"
+            echo "--${now_fine}--" >> "${log_file}"
+            echo "${@}" >> "${log_file}"
+        else
+            echo "--${now_fine}--"
+            echo "!! Calling echo_or_log to early !!"
+            echo "${@}"
+        fi
 
         if [[ "x${DEBUG_WMW}" == "xyes" ]]
         then
-            echo "${now_fine}: ${@}"
+            echo "--${now_fine}--"
+            echo "!! Debug enabled !!"
+            echo "${@}"
         fi
     fi
 }
@@ -118,9 +127,9 @@ function take_snapshot()
         fi
 
         local gen_backups_folder="${ARG_DESTINATION}/backups/${GBL_WORKING_DIRECTORY}"
-        local gen_this_backup_folder="${gen_backups_folder}/${GBL_BACKUP_DATE}"
+        GBL_THIS_BACKUP_FOLDER="${gen_backups_folder}/${GBL_BACKUP_DATE}"
         local gen_backup_file="${GBL_NAME}.${CFG_TAR_FILE_EXTENSION}"
-        mkdir -p "${gen_this_backup_folder}"
+        mkdir -p "${GBL_THIS_BACKUP_FOLDER}"
 
         # Cleanup older snapshots
         pushd "${gen_backups_folder}" >/dev/null
@@ -140,9 +149,9 @@ function take_snapshot()
         done
 
         # Create new snapshot
-        echo_or_log "Backing up ${GBL_NAME} to ${gen_this_backup_folder}"
+        echo_or_log "Backing up ${GBL_NAME} to ${GBL_THIS_BACKUP_FOLDER}"
 
-        local tar_output=$( tar -c${CFG_TAR_ARCHIVE_TYPE}f "${gen_this_backup_folder}/${gen_backup_file}" ${built_up_excludes} ${tar_backup_cmd} )
+        local tar_output=$( tar -c${CFG_TAR_ARCHIVE_TYPE}f "${GBL_THIS_BACKUP_FOLDER}/${gen_backup_file}" ${built_up_excludes} ${tar_backup_cmd} )
         echo_or_log "${tar_output}"
 
         if [[ "x${ARG_OPERATION}" == "xstart" ]]
