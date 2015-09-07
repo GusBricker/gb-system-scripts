@@ -39,6 +39,14 @@ function rif()
     local sed_args="-i.${backup_ex}"
     local sed_cmd="s/${find_term}/${replace_term}/g"
 
+    if [[ "x${find_term}" == "x" ]] || [[ "x${replace_term}" == "x" ]] || [[ "x${directory_term}" == "x" ]]
+    then
+        echo "Missing minimum arguments:"
+        echo "   rif <find term> <replace term> <directory> <dry run>"
+        echo "   Dry run argument is optional, use yes to enable."
+        return 1
+    fi
+
     if [[ "x${dry_run}" == "xyes" ]]
     then
         sed_args="-n"
