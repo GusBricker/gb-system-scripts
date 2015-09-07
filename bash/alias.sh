@@ -39,7 +39,7 @@ function rif()
     local sed_args="-i.${backup_ex}"
     local sed_cmd="s/${find_term}/${replace_term}/g"
 
-    if [[ "x${find_term}" == "x" ]] || [[ "x${replace_term}" == "x" ]] || [[ "x${directory_term}" == "x" ]]
+    if [[ "x${find_term}" == "x" ]] || [[ "x${replace_term}" == "x" ]] || [[ "x${directory}" == "x" ]]
     then
         echo "Missing minimum arguments:"
         echo "   rif <find term> <replace term> <directory> <dry run>"
