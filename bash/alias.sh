@@ -29,6 +29,29 @@ function fifg()
     fif "$1" "." "--exclude-dir=.git"
 }
 
+function rif()
+{
+    local find_term="$1"
+    local replace_term="$2"
+    local directory="$3"
+    local dry_run="$4"
+    local backup_ex="rifbak"
+    local sed_args="-i.${backup_ex}"
+    local sed_cmd="s/${find_term}/${replace_term}/g"
+
+    if [[ "x${dry_run}" == "xyes" ]]
+    then
+        sed_args="-n"
+        sed_cmd="/${find_term}/p"
+        echo "Running dry!"
+    else
+        echo "Deleting old backup files"
+        rm ${directory}/*.${backup_ex}
+    fi
+
+    find "${directory}" -type f -exec sh -c "if [[ {} == *.${backup_ex} ]]; then exit 1; fi" \; -exec echo "Searching: " {} \; -exec sed ${sed_args} "${sed_cmd}" {} \;
+}
+
 function mkcd() 
 {
     mkdir -p "$1" && cd "$1"
