@@ -102,3 +102,12 @@ function redit()
         vim ${file}
     done
 }
+
+function download()
+{
+    local url="$1"
+    shift
+
+    wget --user-agent=Mozilla --content-disposition "${url}" "${@}"
+}
+
