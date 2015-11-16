@@ -111,3 +111,27 @@ function download()
     wget --user-agent=Mozilla --content-disposition "${url}" "${@}"
 }
 
+function backup()
+{
+    local src="$1"
+    shift
+    local dst="$1"
+    shift
+
+    rsync -avz --progress --checksum --inplace --partial --append "$@" "${src}" "${dst}"
+}
+
+function maketempdir()
+{
+    # Copied from: http://unix.stackexchange.com/a/84980
+    local name="$1"
+    local dir=$(mktemp -d 2>/dev/null || mktemp -d -t "${name}")
+
+    echo ${dir}
+}
+
+function beep()
+{
+    echo -ne '\a'
+}
+
