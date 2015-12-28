@@ -130,6 +130,25 @@ function maketempdir()
     echo ${dir}
 }
 
+function ssh_forward_on_host()
+{
+    local host_port="$1"
+    shift
+    local client_port="$1"
+    shift
+
+    if [[ "x${host_port}" == "x" ]] || [[ "x${client_port}" == "x" ]]
+    then
+        echo "Incorrect arguments"
+        echo "\$1 = port on host to forward to client"
+        echo "\$2 = port on client to access"
+        echo "The rest of the arguments are up to you!"
+        return 1
+    fi
+
+    ssh -nNT -L ${client_port}:localhost:${host_port} "$@"
+}
+
 function beep()
 {
     echo -ne '\a'
