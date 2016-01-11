@@ -3,6 +3,7 @@
 alias ll="ls -lhF"
 alias la="ls -lahF"
 alias again="history -p !!"
+alias tb="nc termbin.com 9999"
 
 function fif() 
 {
