@@ -4,6 +4,8 @@ alias ll="ls -lhF"
 alias la="ls -lahF"
 alias again="history -p !!"
 alias tb="nc termbin.com 9999"
+alias urldecode='python -c "import sys, urllib as ul; print ul.unquote_plus(sys.argv[1])"'
+alias urlencode='python -c "import sys, urllib as ul; print ul.quote_plus(sys.argv[1])"'
 
 function fif() 
 {
