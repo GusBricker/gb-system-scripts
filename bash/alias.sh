@@ -60,7 +60,7 @@ function rif()
         rm ${directory}/*.${backup_ex}
     fi
 
-    find "${directory}" -type f -exec sh -c "if [[ {} == *.${backup_ex} ]]; then exit 1; fi" \; -exec echo "Searching: " {} \; -exec sed ${sed_args} "${sed_cmd}" {} \;
+    find "${directory}" -type f -exec bash -c "if [[ {} == *.${backup_ex} ]]; then exit 1; fi" \; -exec echo "Searching: " {} \; -exec sed ${sed_args} "${sed_cmd}" {} \;
 }
 
 function mkcd() 
