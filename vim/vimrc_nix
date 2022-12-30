@@ -37,3 +37,5 @@ set autoread
 set so=7
 set ruler
 set expandtab
+nmap 8 :setlocal display=uhex
+nmap 9 :%!xxd
