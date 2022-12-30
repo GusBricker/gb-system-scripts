@@ -95,7 +95,13 @@ function take_snapshot()
     echo_or_log "Backing up ${backup_name} to ${backup_dest_path}"
     echo_or_log "${mksquashfs_cmd}"
     eval ${mksquashfs_cmd} 
-    echo_or_log "Backup complete"
+    local success="$?"
+    if [ "${success}" -eq 0 ]
+    then
+        echo_or_log "Backup success"
+    else
+        echo_or_log "Backup failed"
+    fi
 }
 
 
