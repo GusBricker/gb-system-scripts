@@ -12,6 +12,13 @@ then
     exit 1
 fi
 
+PORT="${2}"
+if [[ "x${PORT}" == "x" ]]
+then
+    echo "Set port"
+    exit 1
+fi
+
 set -ex
 
 echo "Setting up forwarding"
@@ -21,13 +28,13 @@ sysctl -w net.ipv4.conf.all.send_redirects=0
 
 echo "Setting up IPTables (v4)"
 iptables -t nat -F
-iptables -t nat -A PREROUTING -i "${IF}" -p tcp --dport 80 -j REDIRECT --to-port 8080
-iptables -t nat -A PREROUTING -i "${IF}" -p tcp --dport 443 -j REDIRECT --to-port 8080
+iptables -t nat -A PREROUTING -i "${IF}" -p tcp --dport 80 -j REDIRECT --to-port "${PORT}"
+iptables -t nat -A PREROUTING -i "${IF}" -p tcp --dport 443 -j REDIRECT --to-port "${PORT}"
 
 echo "Setting up IPTables (v6)"
 ip6tables -t nat -F
-ip6tables -t nat -A PREROUTING -i "${IF}" -p tcp --dport 80 -j REDIRECT --to-port 8080
-ip6tables -t nat -A PREROUTING -i "${IF}" -p tcp --dport 443 -j REDIRECT --to-port 8080
+ip6tables -t nat -A PREROUTING -i "${IF}" -p tcp --dport 80 -j REDIRECT --to-port "${PORT}"
+ip6tables -t nat -A PREROUTING -i "${IF}" -p tcp --dport 443 -j REDIRECT --to-port "${PORT}"
 
 echo "Listing IPTables rules"
 iptables -t nat -nvL
