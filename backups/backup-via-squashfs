@@ -1,0 +1,188 @@
+#!/bin/bash
+
+ARG_NAME=""
+ARG_STATE="${HOME}/.backup-via-squashfs"
+ARG_PATH=""
+ARG_EXCLUDES=()
+ARG_NUM_VERSIONS=20
+ARG_DESTINATION="${HOME}/.wmw"
+THIS_SCRIPT=$(basename "${0}")
+THIS_PID=$$
+
+function usage()
+{
+	cat <<-__EOF__
+Usage: ${THIS_SCRIPT} [OPTIONS]...
+Performs a backup of a directory or entire root file system using mksquashfs.
+
+Options:
+    -n,--name               Prefix name to give backup (eg: <name>-backup-2022-12-30_13-22.sqsh).
+    -s,--state              Folder to store state (this is to prevent parallel backups happening).
+    -p,--path               Path to backup, needs to be a folder.
+    -e,--exclude            Directories to exclude from backups, at minimum recommended: media dev run mnt proc sys tmp
+                            Can be specified multiple times.
+    -d,--destination        Place to backup files to!
+    -n,--num_versions       Number of versions of keep of backup. Will delete oldest backups first.
+                            Defaults to 20.
+    -h,--help               Print this awesome info!
+
+Note: All arguments that take parameters are equals seperated.
+For example use -p like this: -p=~/my_stuff
+
+ENVIRONMENT_VARIABLES:
+    - PUSHOVER_TOKEN: Application token from pushover.net to send notifications somewhere
+    - PUSHOVER_USER: User key from pushover.net to send notifications somewhere
+
+Chris Lapa <chris@lapa.com.au>
+__EOF__
+}
+
+function send_push()
+{
+    if [[ "x${PUSHOVER_TOKEN}" == "x" ]] && [[ "x${PUSHOVER_USER}" == "x" ]]
+    then
+        return
+    fi
+    curl --form-string "token=${PUSHOVER_TOKEN}" \
+         --form-string "user=${PUSHOVER_USER}" \
+         --form-string "message=${@}" \
+         https://api.pushover.net/1/messages.json
+}
+
+function echo_or_log()
+{
+    local now_fine="$(date +'%Y-%m-%d_%H-%M-%S')"
+    local log_file="${ARG_STATE}/${ARG_NAME}.log"
+
+    echo "--${now_fine}--" >> "${log_file}"
+    echo "[$ARG_NAME] ${@}" | tee -a "${log_file}"
+    send_push "[$ARG_NAME] ${@}"
+}
+
+function take_snapshot()
+{
+    echo_or_log "Backup starting"
+    # Build up excludes
+    local built_up_excludes=""
+    for ((i = 0; i < ${#ARG_EXCLUDES[@]}; i++))
+    do
+        built_up_excludes="${ARG_EXCLUDES[$i]} ${built_up_excludes}"
+    done
+
+    local backup_date="$(date +'%Y-%m-%d_%H-%M')"
+    local backup_name="${ARG_NAME}-backup-${backup_date}.sqsh"
+    local backup_dest_path="${ARG_DESTINATION}/${backup_name}.sqsh"
+    local mksquashfs_cmd=""
+    if [[ -d "${ARG_PATH}" ]] && [[ -d "${ARG_DESTINATION}" ]]
+    then
+        mksquashfs_cmd="mksquashfs ${ARG_PATH} ${backup_dest_path} -e ${built_up_excludes}"
+    else
+        echo "Path and destination argument must be a directory"
+        exit 1
+    fi
+
+    # Cleanup older snapshots
+    pushd "${ARG_DESTINATION}" >/dev/null
+    local to_delete=$(ls -t | awk "NR>${ARG_NUM_VERSIONS}")
+    if [[ "x${to_delete}" != "x" ]]
+    then
+        echo_or_log "Deleting: ${to_delete}"
+        rm -r ${to_delete}
+    fi
+    popd >/dev/null
+
+    # Create new snapshot
+    echo_or_log "Backing up ${backup_name} to ${backup_dest_path}"
+    echo_or_log "${mksquashfs_cmd}"
+    eval ${mksquashfs_cmd} 
+    echo_or_log "Backup complete"
+}
+
+
+if [[ "x${@}" == "x" ]]
+then
+    usage
+    exit 0
+fi
+
+for i in "$@"
+do
+    case ${i} in
+        -s=*|--state=*)
+            ARG_STATE="${i#*=}"
+            shift
+            ;;
+        -p=*|--path=*)
+            ARG_PATH="${i#*=}"
+            shift
+            ;;
+        -n=*|--name=*)
+            ARG_NAME="${i#*=}"
+            shift
+            ;;
+        -e=*|--exclude=*)
+            ARG_EXCLUDES+=("${i#*=}")
+            shift
+            ;;
+        -d=*|--destination=*)
+            ARG_DESTINATION="${i#*=}"
+            shift
+            ;;
+        -n=*|--num_versions=*)
+            ARG_NUM_VERSIONS="${i#*=}"
+            shift
+            ;;
+        *)
+            usage
+            exit 0
+            ;;
+        -h|--help)
+            usage
+            exit 0
+            ;;
+    esac
+done
+
+if [[ "x${ARG_PATH}" == "x" ]]
+then
+    echo "Path missing, can't backup nothing!"
+    exit 1
+fi
+
+if [[ "x${ARG_DESTINATION}" == "x" ]]
+then
+    echo "Destination missing, can't backup to nowhere!"
+    exit 1
+fi
+
+if [[ "x${ARG_NAME}" == "x" ]]
+then
+    echo "Name missing, backups must have name prefixes"
+    exit 1
+fi
+
+if [[ "x${ARG_EXCLUDES}" == "x" ]]
+then
+    echo "WARNING: Excludes empty, at minimum its recommended to exclude: 'media dev run mnt proc sys tmp'"
+fi
+mkdir -p "${ARG_STATE}"
+
+LOCKFILE="${ARG_STATE}/lockfile"
+
+if [[ ! -e "${LOCKFILE}" ]]
+then
+    echo "${THIS_PID}" > "${LOCKFILE}"
+    take_snapshot
+    exit 0
+fi
+
+existing_pid=$(cat "${LOCKFILE}")
+if ps -p $existing_pid > /dev/null
+then
+    echo_or_log "Backup with PID: $existing_pid is still running, aborting"
+    exit 0
+fi
+
+echo "${THIS_PID}" > "${LOCKFILE}"
+take_snapshot
+exit 0
