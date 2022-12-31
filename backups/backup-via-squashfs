@@ -71,7 +71,7 @@ function take_snapshot()
 
     local backup_date="$(date +'%Y-%m-%d_%H-%M')"
     local backup_name="${ARG_NAME}-backup-${backup_date}.sqsh"
-    local backup_dest_path="${ARG_DESTINATION}/${backup_name}.sqsh"
+    local backup_dest_path="${ARG_DESTINATION}/${backup_name}"
     local mksquashfs_cmd=""
     if [[ -d "${ARG_PATH}" ]] && [[ -d "${ARG_DESTINATION}" ]]
     then
