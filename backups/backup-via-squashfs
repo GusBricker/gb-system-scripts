@@ -54,8 +54,7 @@ function echo_or_log()
     local now_fine="$(date +'%Y-%m-%d_%H-%M-%S')"
     local log_file="${ARG_STATE}/${ARG_NAME}.log"
 
-    echo "--${now_fine}--" >> "${log_file}"
-    echo "[$ARG_NAME] ${@}" | tee -a "${log_file}"
+    echo "[${now_fine}, $ARG_NAME] ${@}" | tee -a "${log_file}"
     send_push "[$ARG_NAME] ${@}"
 }
 
