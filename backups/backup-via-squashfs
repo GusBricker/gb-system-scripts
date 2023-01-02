@@ -16,7 +16,7 @@ Usage: ${THIS_SCRIPT} [OPTIONS]...
 Performs a backup of a directory or entire root file system using mksquashfs.
 
 Options:
-    -n,--name               Prefix name to give backup (eg: <name>-backup-2022-12-30_13-22.sqsh).
+    -m,--name               Prefix name to give backup (eg: <name>-backup-2022-12-30_13-22.sqsh).
     -s,--state              Folder to store state (this is to prevent parallel backups happening).
     -p,--path               Path to backup, needs to be a folder.
     -e,--exclude            Directories to exclude from backups, at minimum recommended: media dev run mnt proc sys tmp
@@ -121,7 +121,7 @@ do
             ARG_PATH="${i#*=}"
             shift
             ;;
-        -n=*|--name=*)
+        -m=*|--name=*)
             ARG_NAME="${i#*=}"
             shift
             ;;
